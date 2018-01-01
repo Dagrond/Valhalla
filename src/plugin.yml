@@ -1,0 +1,8 @@
+name: Valhalla
+main: dagrond.Main
+version: 0.1
+commands:
+   Valhalla:
+      aliases: [vh]
+      description: Tylko dla rigczowych graczy.
+      usage: /vh
