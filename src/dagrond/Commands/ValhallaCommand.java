@@ -34,13 +34,13 @@ public class ValhallaCommand implements CommandExecutor {
               if (!(Bukkit.getPlayer(args[1]).hasPermission("valhalla.bypass"))) {
                 if (!votingInProgress) {
                   for (Player player : Bukkit.getOnlinePlayers()) {
-                    if (player.hasPermission("valhalla.member") && !(player.isOp())) 
+                    if (player.hasPermission("valhalla.member") && !(player.isOp() && !(player.hasPermission("valhalla.bypass")))) 
                       onlineMembers.put(player, false);
                   }
                   if (onlineMembers.size() >= 5) {
                     Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aGlosowanie nad przyjeciem gracza &e&l"+args[1]+"&a rozpoczelo sie!"));
                     Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aAktywni czlonkowie: &e&l"+onlineMembers.size()));
-                    Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aLiczba potrzebnych glosow do przyjecia: &e&l"+Math.round(onlineMembers.size()*0.80)));
+                    Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aLiczba potrzebnych glosow do przyjecia: &e&l"+Math.floor(onlineMembers.size()*0.80)));
                     Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aGlosowanie potrwa dwie minuty. Powodzenia!"));
                     Bukkit.broadcast(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aAby zaglosowac za przyjeciem &e&l"+args[1]+" &awpisz /vh tak"), "valhalla.member");
                     Bukkit.broadcast(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aAby zaglosowac przeciwko przyjeciu &e&l"+args[1]+" &awpisz /vh nie"), "valhalla.member");
@@ -56,7 +56,7 @@ public class ValhallaCommand implements CommandExecutor {
                             votes++;
                         }
                         Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aGlosowanie nad przyjeciem gracza &e&l"+args[1]+"&a zakonczylo sie!"));
-                        Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aUzyskane glosy: &e&l"+votes+"/"+onlineMembers.size()+" &a(Potrzebne: &e&l"+Math.round(onlineMembers.size()*0.80)+"&a)"));
+                        Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aUzyskane glosy: &e&l"+votes+"/"+onlineMembers.size()+" &a(Potrzebne: &e&l"+Math.floor(onlineMembers.size()*0.80)+"&a)"));
                         if (votes >= Math.round(onlineMembers.size()*0.80)) {
                           Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aGracz &e&l"+args[1]+"&a dostal sie do Valhalli!"));
                           Player player = Bukkit.getPlayer(args[1]);
@@ -157,11 +157,18 @@ public class ValhallaCommand implements CommandExecutor {
             sender.sendMessage(ChatColor.RED+"Aktualnie nie ma zadnego glosowania!");
             return true;
           }
-        } else if (args[0].equalsIgnoreCase("help")) {
+        } else if (args[0].equalsIgnoreCase("help") || args[0].equalsIgnoreCase("pomoc")) {
           sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aPomoc:"));
           sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&5- /vh dodaj (gracz) - &6Rozpoczyna glosowanie o dodanie gracza do Valhalli"));
-          sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&5- /vh tak - &6Rozpoczyna glosowanie o dodanie gracza do Valhalli"));
-          sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&5- /vh nie (gracz) - &6Rozpoczyna glosowanie o dodanie gracza do Valhalli"));
+          sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&5- /vh tak - &6glosujesz ZA przyjeciem gracza do Valhalli."));
+          sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&5- /vh nie - &6glosujesz PRZECIW przyjeciu gracza do Valhalli"));
+          sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&5- /vh lista - &6lista wszystkich czlonkow Valhalli"));
+          return true;
+        } else if (args[0].equalsIgnoreCase("lista")) {
+          sender.sendMessage("Jestem zbyt leniwy aby teraz to zrobic...");
+          return true;
+        } else {
+          sender.sendMessage(ChatColor.RED+"Podany argument nie istnieje! Wpisz /vh pomoc");
           return true;
         }
       } else {
