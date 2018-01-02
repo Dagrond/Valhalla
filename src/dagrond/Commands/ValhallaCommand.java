@@ -1,6 +1,8 @@
 package dagrond.Commands;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -10,14 +12,22 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import dagrond.Main;
+import dagrond.Utils.ConfigAccessor;
 
 
 public class ValhallaCommand implements CommandExecutor {
   Main plugin;
   private Boolean votingInProgress = false;
   private HashMap<Player, Boolean> onlineMembers = new HashMap<>();
-  public ValhallaCommand (Main instance) {
+  private ConfigAccessor dataAccessor;
+  private List<String> members = new ArrayList<>();
+  
+  @SuppressWarnings("unchecked")
+  public ValhallaCommand (Main instance, ConfigAccessor dataAccessor) {
     plugin = instance;
+    this.dataAccessor = dataAccessor;
+    if (this.dataAccessor.getConfig().isList("valhallamembers"))
+      this.members = (List<String>) this.dataAccessor.getConfig().getList("valhallamembers");
   }
   
   @SuppressWarnings("deprecation")
@@ -34,7 +44,7 @@ public class ValhallaCommand implements CommandExecutor {
               if (!(Bukkit.getPlayer(args[1]).hasPermission("valhalla.bypass"))) {
                 if (!votingInProgress) {
                   for (Player player : Bukkit.getOnlinePlayers()) {
-                    if (player.hasPermission("valhalla.member") && !(player.isOp() && !(player.hasPermission("valhalla.bypass")))) 
+                    if (members.contains(player.getUniqueId().toString())) 
                       onlineMembers.put(player, false);
                   }
                   if (onlineMembers.size() >= 5) {
@@ -165,16 +175,31 @@ public class ValhallaCommand implements CommandExecutor {
           sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&5- /vh lista - &6lista wszystkich czlonkow Valhalli"));
           return true;
         } else if (args[0].equalsIgnoreCase("lista")) {
-          sender.sendMessage("Jestem zbyt leniwy aby teraz to zrobic...");
+          sender.sendMessage("Lista: "+members.toString());
           return true;
+        } else if (args[0].equalsIgnoreCase("addmember")) {
+            if (!(sender instanceof Player)) {
+              if (args.length == 2) {
+                members.add(Bukkit.getOfflinePlayer(args[1]).getUniqueId().toString());
+                saveData();
+                sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aPomyslnie dodano gracza &e&l"+args[1]+" &ado listy czlonkow Valhalli!"));
+                return true;
+              } else {
+                sender.sendMessage(ChatColor.RED+"Uzycie: /vh addmember (gracz)");
+                return false;
+              }
+            } else {
+              sender.sendMessage(ChatColor.RED+"Ta komende mozna wywolac tylko z konsoli!");
+              return true;
+            }
         } else {
           sender.sendMessage(ChatColor.RED+"Podany argument nie istnieje! Wpisz /vh pomoc");
           return true;
         }
       } else {
-        sender.sendMessage(ChatColor.RED+"Nie masz odpowiednich uprawnien!");
-        return true;
-      }
+      sender.sendMessage(ChatColor.RED+"Nie masz odpowiednich uprawnien!");
+      return true;
+     }
     }
     return true;
   }
@@ -191,6 +216,15 @@ public class ValhallaCommand implements CommandExecutor {
     player.getInventory().setHelmet(null);
     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "pex user "+player.getDisplayName()+" group set "+ranga);
     Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "spawn "+player.getDisplayName());
+    if (ranga.equalsIgnoreCase("rigcz"))
+      members.add(player.getUniqueId().toString());
+    else
+      members.remove(player.getUniqueId().toString());
     return;
+  }
+  
+  public void saveData() {
+    this.dataAccessor.getConfig().set("valhallamembers", (List<String>)members);
+    this.dataAccessor.saveConfig();
   }
 }
