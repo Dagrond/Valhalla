@@ -67,7 +67,7 @@ public class ValhallaCommand implements CommandExecutor {
                         }
                         Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aGlosowanie nad przyjeciem gracza &e&l"+args[1]+"&a zakonczylo sie!"));
                         Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aUzyskane glosy: &e&l"+votes+"/"+onlineMembers.size()+" &a(Potrzebne: &e&l"+Math.floor(onlineMembers.size()*0.80)+"&a)"));
-                        if (votes >= Math.round(onlineMembers.size()*0.80)) {
+                        if (votes >= Math.floor(onlineMembers.size()*0.80)) {
                           Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aGracz &e&l"+args[1]+"&a dostal sie do Valhalli!"));
                           Player player = Bukkit.getPlayer(args[1]);
                           if (player != null) {
@@ -175,7 +175,7 @@ public class ValhallaCommand implements CommandExecutor {
           sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&5- /vh lista - &6lista wszystkich czlonkow Valhalli"));
           return true;
         } else if (args[0].equalsIgnoreCase("lista")) {
-          sender.sendMessage("Lista: "+members.toString());
+          sender.sendMessage("Lista (brzydka ale zawsze xD): "+members.toString());
           return true;
         } else if (args[0].equalsIgnoreCase("addmember")) {
             if (!(sender instanceof Player)) {
@@ -220,6 +220,7 @@ public class ValhallaCommand implements CommandExecutor {
       members.add(player.getUniqueId().toString());
     else
       members.remove(player.getUniqueId().toString());
+    saveData();
     return;
   }
   

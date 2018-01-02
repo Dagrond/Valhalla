@@ -14,8 +14,8 @@ public final class Main extends JavaPlugin {
   
   public void onEnable() {
     Bukkit.getLogger().info(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aLadowanie pluginu..."));
-    getCommand("Valhalla").setExecutor(new ValhallaCommand(this, dataAccessor));
     dataAccessor.saveDefaultConfig();
+    getCommand("Valhalla").setExecutor(new ValhallaCommand(this, dataAccessor));
     Bukkit.getLogger().info(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aPlugin pomyslnie wlaczony!"));
   }
   
