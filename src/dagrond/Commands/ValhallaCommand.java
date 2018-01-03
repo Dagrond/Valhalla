@@ -3,6 +3,7 @@ package dagrond.Commands;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -18,6 +19,7 @@ import dagrond.Utils.ConfigAccessor;
 public class ValhallaCommand implements CommandExecutor {
   Main plugin;
   private Boolean votingInProgress = false;
+  private int votesNeeded = 0;
   private HashMap<Player, Boolean> onlineMembers = new HashMap<>();
   private ConfigAccessor dataAccessor;
   private List<String> members = new ArrayList<>();
@@ -47,10 +49,15 @@ public class ValhallaCommand implements CommandExecutor {
                     if (members.contains(player.getUniqueId().toString())) 
                       onlineMembers.put(player, false);
                   }
-                  if (onlineMembers.size() >= 5) {
+                  if (onlineMembers.size() >=5) {
+                    votesNeeded = (int) Math.floor(onlineMembers.size()*0.80);
+                  } else if (onlineMembers.size() >= 3) {
+                    votesNeeded = 3;
+                  }
+                  if (onlineMembers.size() >= 3) {
                     Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aGlosowanie nad przyjeciem gracza &e&l"+args[1]+"&a rozpoczelo sie!"));
                     Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aAktywni czlonkowie: &e&l"+onlineMembers.size()));
-                    Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aLiczba potrzebnych glosow do przyjecia: &e&l"+Math.floor(onlineMembers.size()*0.80)));
+                    Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aLiczba potrzebnych glosow do przyjecia: &e&l"+votesNeeded));
                     Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aGlosowanie potrwa dwie minuty. Powodzenia!"));
                     Bukkit.broadcast(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aAby zaglosowac za przyjeciem &e&l"+args[1]+" &awpisz /vh tak"), "valhalla.member");
                     Bukkit.broadcast(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aAby zaglosowac przeciwko przyjeciu &e&l"+args[1]+" &awpisz /vh nie"), "valhalla.member");
@@ -59,17 +66,17 @@ public class ValhallaCommand implements CommandExecutor {
                       @Override
                       public void run() {
                         votingInProgress = false;
-                        onlineMembers = new HashMap<>();
                         int votes = 0;
                         for (boolean vote : onlineMembers.values()) {
                           if (vote)
                             votes++;
                         }
                         Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aGlosowanie nad przyjeciem gracza &e&l"+args[1]+"&a zakonczylo sie!"));
-                        Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aUzyskane glosy: &e&l"+votes+"/"+onlineMembers.size()+" &a(Potrzebne: &e&l"+Math.floor(onlineMembers.size()*0.80)+"&a)"));
-                        if (votes >= Math.floor(onlineMembers.size()*0.80)) {
+                        Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aUzyskane glosy: &e&l"+votes+"/"+onlineMembers.size()+" &a(Potrzebne: &e&l"+votesNeeded+"&a)"));
+                        if (votes >= votesNeeded) {
                           Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aGracz &e&l"+args[1]+"&a dostal sie do Valhalli!"));
                           Player player = Bukkit.getPlayer(args[1]);
+                          onlineMembers = new HashMap<>();
                           if (player != null) {
                             resetPlayer(player, "rigcz");
                             player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aWitaj w Valhalli!"));
@@ -86,7 +93,7 @@ public class ValhallaCommand implements CommandExecutor {
                     }, 2400);
                     return true;
                   } else {
-                    sender.sendMessage(ChatColor.RED+"Aby rozpoczac glosowanie musi byc online conajmniej 5 czlonkow Valhalli!");
+                    sender.sendMessage(ChatColor.RED+"Aby rozpoczac glosowanie musi byc online conajmniej 3 czlonkow Valhalli!");
                     return true;
                   }
                 } else {
@@ -175,7 +182,12 @@ public class ValhallaCommand implements CommandExecutor {
           sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&5- /vh lista - &6lista wszystkich czlonkow Valhalli"));
           return true;
         } else if (args[0].equalsIgnoreCase("lista")) {
-          sender.sendMessage("Lista (brzydka ale zawsze xD): "+members.toString());
+          sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aLista czlonkow Valhalli:"));
+          String list = "";
+          for (String player : members) {
+            list += Bukkit.getOfflinePlayer(UUID.fromString(player)).getName()+", ";
+          }
+          sender.sendMessage(ChatColor.DARK_AQUA+list);
           return true;
         } else if (args[0].equalsIgnoreCase("addmember")) {
             if (!(sender instanceof Player)) {
@@ -214,8 +226,8 @@ public class ValhallaCommand implements CommandExecutor {
     player.getInventory().setBoots(null);
     player.getInventory().setLeggings(null);
     player.getInventory().setHelmet(null);
-    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "pex user "+player.getDisplayName()+" group set "+ranga);
-    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "spawn "+player.getDisplayName());
+    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "pex user "+player.getName()+" group set "+ranga);
+    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "spawn "+player.getName());
     if (ranga.equalsIgnoreCase("rigcz"))
       members.add(player.getUniqueId().toString());
     else
