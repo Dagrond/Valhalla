@@ -14,22 +14,19 @@ import org.bukkit.entity.Player;
 
 import dagrond.Main;
 import dagrond.Utils.ConfigAccessor;
+import dagrond.Utils.DataManager;
 
 
 public class ValhallaCommand implements CommandExecutor {
   Main plugin;
   private Boolean votingInProgress = false;
   private int votesNeeded = 0;
-  private HashMap<Player, Boolean> onlineMembers = new HashMap<>();
-  private ConfigAccessor dataAccessor;
-  private List<String> members = new ArrayList<>();
+  private DataManager Data;
   
   @SuppressWarnings("unchecked")
-  public ValhallaCommand (Main instance, ConfigAccessor dataAccessor) {
+  public ValhallaCommand (Main instance, DataManager Data) {
     plugin = instance;
-    this.dataAccessor = dataAccessor;
-    if (this.dataAccessor.getConfig().isList("valhallamembers"))
-      this.members = (List<String>) this.dataAccessor.getConfig().getList("valhallamembers");
+    this.Data = Data;
   }
   
   @SuppressWarnings("deprecation")
@@ -45,11 +42,7 @@ public class ValhallaCommand implements CommandExecutor {
             if (Bukkit.getPlayer(args[1]) != null) {
               if (!(Bukkit.getPlayer(args[1]).hasPermission("valhalla.bypass"))) {
                 if (!votingInProgress) {
-                  for (Player player : Bukkit.getOnlinePlayers()) {
-                    if (members.contains(player.getUniqueId().toString())) 
-                      onlineMembers.put(player, false);
-                  }
-                  if (onlineMembers.size() >=5) {
+                  if (Data.getOnlineMembers().size() >=5) {
                     votesNeeded = (int) Math.floor(onlineMembers.size()*0.80);
                   } else if (onlineMembers.size() >= 3) {
                     votesNeeded = 3;
@@ -234,10 +227,5 @@ public class ValhallaCommand implements CommandExecutor {
       members.remove(player.getUniqueId().toString());
     saveData();
     return;
-  }
-  
-  public void saveData() {
-    this.dataAccessor.getConfig().set("valhallamembers", (List<String>)members);
-    this.dataAccessor.saveConfig();
   }
 }
