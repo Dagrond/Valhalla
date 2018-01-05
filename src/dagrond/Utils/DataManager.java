@@ -1,9 +1,11 @@
 package dagrond.Utils;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import dagrond.Main;
@@ -11,8 +13,10 @@ import dagrond.Main;
 public class DataManager {
   protected Main plugin;
   protected ConfigAccessor dataAccessor;
-  protected List<String> onlineMembers = new ArrayList<>();
-  protected List<String> members = new ArrayList<>();
+  protected HashSet<UUID> onlineMembers = new HashSet<>();
+  protected HashSet<UUID> members = new HashSet<>(); //gracze, ktorzy sa w Valhalli
+  protected HashMap<UUID, String> waitingPlayers = new HashMap<>(); //gracze, ktorzy zaaplikowali ale nie dostali jeszcze odpowiedniej ilosci glosow
+  protected HashSet<UUID> waitingMembers = new HashSet<>(); //gracze, ktorzy juz dostali sie do valhalli ale serwer oczekuje z ich dodaniem do czasu, az beda online
   
   public DataManager(Main plugin) {
     this.plugin = plugin;
@@ -21,35 +25,87 @@ public class DataManager {
     loadData();
   }
   
-  public List<String> getAllMembers() {
+  public HashSet<UUID> getAllMembers() {
     return members;
   }
   
-  @SuppressWarnings("unchecked")
+  public HashMap<UUID, String> getWaitingPlayers() {
+    return waitingPlayers;
+  }
+  
+  public HashSet<UUID> getWaitingMembers() {
+    return waitingMembers;
+  }
+  
   public void loadData() {
-    if (this.dataAccessor.getConfig().isList("valhallamembers"))
-      this.members = (List<String>) this.dataAccessor.getConfig().getList("valhallamembers");
+    if (dataAccessor.getConfig().isList("Members")) {
+      for (Object uuid : dataAccessor.getConfig().getList("Members")) {
+        members.add(UUID.fromString(uuid.toString()));
+      }
+    }
+    if (dataAccessor.getConfig().isList("WaitingMembers")) {
+      for (Object uuid : dataAccessor.getConfig().getList("WaitingMembers")) {
+        waitingMembers.add(UUID.fromString(uuid.toString()));
+      }
+    }
+    if (dataAccessor.getConfig().isConfigurationSection("WaitingPlayers")) {
+      for (Object uuid : dataAccessor.getConfig().getConfigurationSection("WaitingPlayers").getKeys(false)) {
+        waitingPlayers.put(UUID.fromString(uuid.toString()), dataAccessor.getConfig().getString("WaitingPlayers."+uuid.toString()));
+      }
+    }
   }
   
   public void saveData() {
-    this.dataAccessor.getConfig().set("valhallamembers", members);
+    dataAccessor.getConfig().set("Members", members);
+    dataAccessor.getConfig().set("WaitingMembers", waitingMembers);
+    for (UUID uuid : waitingPlayers.keySet()) {
+      dataAccessor.getConfig().set("WaitingPlayers."+uuid.toString(), waitingPlayers.get(uuid));
+    }
     dataAccessor.saveConfig();
   }
   
-  public List<String> getOnlineMembers() {
-    onlineMembers = new ArrayList<>();
+  public HashSet<UUID> getOnlineMembers() {
+    onlineMembers = new HashSet<>();
     for (Player player : Bukkit.getOnlinePlayers()) {
-      if (members.contains(player.getUniqueId().toString()))
-        onlineMembers.add(player.getUniqueId().toString());
+      if (members.contains(player.getUniqueId()))
+        onlineMembers.add(player.getUniqueId());
     }
     return onlineMembers;
   }
   
   public void addMember(Player player) {
-    
+    player.getEnderChest().clear();
+    player.getInventory().clear();
+    player.setTotalExperience(0);
+    player.setExp(0);
+    player.setLevel(0);
+    player.getInventory().setChestplate(null);;
+    player.getInventory().setBoots(null);
+    player.getInventory().setLeggings(null);
+    player.getInventory().setHelmet(null);
+    player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aWitaj w Valhalli!"));
+    Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aGracz &e&l"+player.getDisplayName()+"&a zostal dodany do Valhalli!"));
+    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "pex user "+player.getName()+" group set rigcz");
+    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "spawn "+player.getName());
+    members.add(player.getUniqueId());
+    saveData();
   }
   
   public void removeMember(Player player) {
-    
+    player.getEnderChest().clear();
+    player.getInventory().clear();
+    player.setTotalExperience(0);
+    player.setExp(0);
+    player.setLevel(0);
+    player.getInventory().setChestplate(null);;
+    player.getInventory().setBoots(null);
+    player.getInventory().setLeggings(null);
+    player.getInventory().setHelmet(null);
+    player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &cZostales wyrzucony z Valhalli!"));
+    Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &cGracz &e&l"+player.getDisplayName()+"&c zostal wyrzucony z Valhalli!"));
+    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "pex user "+player.getName()+" group set gracz");
+    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "spawn "+player.getName());
+    members.add(player.getUniqueId());
+    saveData();
   }
 }

@@ -5,7 +5,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import dagrond.Commands.ValhallaCommand;
-import dagrond.Utils.ConfigAccessor;
 import dagrond.Utils.DataManager;
 
 
