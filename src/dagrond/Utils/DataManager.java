@@ -13,10 +13,11 @@ import dagrond.Main;
 public class DataManager {
   protected Main plugin;
   protected ConfigAccessor dataAccessor;
-  protected HashSet<UUID> onlineMembers = new HashSet<>();
+  protected HashSet<UUID> onlineMembers = new HashSet<>(); //gracze, ktorzy sa czlonkami valhalli i sa online
   protected HashSet<UUID> members = new HashSet<>(); //gracze, ktorzy sa w Valhalli
   protected HashMap<UUID, String> waitingPlayers = new HashMap<>(); //gracze, ktorzy zaaplikowali ale nie dostali jeszcze odpowiedniej ilosci glosow
   protected HashSet<UUID> waitingMembers = new HashSet<>(); //gracze, ktorzy juz dostali sie do valhalli ale serwer oczekuje z ich dodaniem do czasu, az beda online
+  protected HashSet<UUID> membersToRemove = new HashSet<>(); //gracze, ktorzy zostana usunieci po wejsciu
   
   public DataManager(Main plugin) {
     this.plugin = plugin;
@@ -28,6 +29,10 @@ public class DataManager {
   public HashSet<UUID> getAllMembers() {
     return members;
   }
+  
+  public HashSet<UUID> getBannedMembers() {
+	    return membersToRemove;
+	  }
   
   public HashMap<UUID, String> getWaitingPlayers() {
     return waitingPlayers;
@@ -48,6 +53,11 @@ public class DataManager {
         waitingMembers.add(UUID.fromString(uuid.toString()));
       }
     }
+    if (dataAccessor.getConfig().isList("MembersToRemove")) {
+        for (Object uuid : dataAccessor.getConfig().getList("MembersToRemove")) {
+        	membersToRemove.add(UUID.fromString(uuid.toString()));
+        }
+      }
     if (dataAccessor.getConfig().isConfigurationSection("WaitingPlayers")) {
       for (Object uuid : dataAccessor.getConfig().getConfigurationSection("WaitingPlayers").getKeys(false)) {
         waitingPlayers.put(UUID.fromString(uuid.toString()), dataAccessor.getConfig().getString("WaitingPlayers."+uuid.toString()));
