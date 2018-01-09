@@ -15,7 +15,7 @@ public class DataManager {
   protected ConfigAccessor dataAccessor;
   protected HashSet<UUID> onlineMembers = new HashSet<>(); //gracze, ktorzy sa czlonkami valhalli i sa online
   protected HashSet<UUID> members = new HashSet<>(); //gracze, ktorzy sa w Valhalli
-  protected HashMap<UUID, String> waitingPlayers = new HashMap<>(); //gracze, ktorzy zaaplikowali ale nie dostali jeszcze odpowiedniej ilosci glosow
+  protected HashSet<UUID> waitingPlayers = new HashSet<>(); //gracze, ktorzy zaaplikowali ale nie dostali jeszcze odpowiedniej ilosci glosow
   protected HashSet<UUID> waitingMembers = new HashSet<>(); //gracze, ktorzy juz dostali sie do valhalli ale serwer oczekuje z ich dodaniem do czasu, az beda online
   protected HashSet<UUID> membersToRemove = new HashSet<>(); //gracze, ktorzy zostana usunieci po wejsciu
   
@@ -26,6 +26,10 @@ public class DataManager {
     loadData();
   }
   
+  public void addWaitingPlayer(Player player) {
+    waitingPlayers.add(player.getUniqueId());
+  }
+  
   public HashSet<UUID> getAllMembers() {
     return members;
   }
@@ -34,12 +38,28 @@ public class DataManager {
 	    return membersToRemove;
 	  }
   
-  public HashMap<UUID, String> getWaitingPlayers() {
+  public HashSet<UUID> getWaitingPlayers() {
     return waitingPlayers;
   }
   
   public HashSet<UUID> getWaitingMembers() {
     return waitingMembers;
+  }
+  
+  public HashMap<UUID, String> getSpecificPlayerVotes (Player player) {
+    HashMap<UUID, String> votes = new HashMap<>();
+    if (dataAccessor.getConfig().isConfigurationSection("votes."+player.getUniqueId())) {
+      for (Object uuid : dataAccessor.getConfig().getConfigurationSection("votes."+player.getUniqueId()).getKeys(false)) {
+        votes.put(UUID.fromString(uuid.toString()), dataAccessor.getConfig().getString("votes."+player.getUniqueId()));
+      }
+    }
+    return votes;
+  }
+  
+  public HashMap<UUID, String> getPlayerResults (Player player) {
+    HashMap<UUID, String> votes = new HashMap<>();
+    //TODO
+    return votes;
   }
   
   public void loadData() {
@@ -58,19 +78,25 @@ public class DataManager {
         	membersToRemove.add(UUID.fromString(uuid.toString()));
         }
       }
-    if (dataAccessor.getConfig().isConfigurationSection("WaitingPlayers")) {
+    if (dataAccessor.getConfig().isList("WaitingPlayers")) {
+      for (Object uuid : dataAccessor.getConfig().getList("WaitingPlayers")) {
+        waitingPlayers.add(UUID.fromString(uuid.toString()));
+      }
+    }
+    /*if (dataAccessor.getConfig().isConfigurationSection("WaitingPlayers")) {
       for (Object uuid : dataAccessor.getConfig().getConfigurationSection("WaitingPlayers").getKeys(false)) {
         waitingPlayers.put(UUID.fromString(uuid.toString()), dataAccessor.getConfig().getString("WaitingPlayers."+uuid.toString()));
       }
-    }
+    }*/
   }
   
   public void saveData() {
     dataAccessor.getConfig().set("Members", members);
     dataAccessor.getConfig().set("WaitingMembers", waitingMembers);
-    for (UUID uuid : waitingPlayers.keySet()) {
+    dataAccessor.getConfig().set("WaitingPlayers", waitingPlayers);
+    /*for (UUID uuid : waitingPlayers.keySet()) {
       dataAccessor.getConfig().set("WaitingPlayers."+uuid.toString(), waitingPlayers.get(uuid));
-    }
+    }*/
     dataAccessor.saveConfig();
   }
   

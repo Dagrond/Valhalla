@@ -29,6 +29,28 @@ public class ValhallaCommand implements CommandExecutor {
           return true;
         }
         if (args[0].equalsIgnoreCase("dolacz") || args[0].equalsIgnoreCase("join") || args[0].equalsIgnoreCase("apply")) {
+          if (sender instanceof Player) {
+            Player player = (Player) sender;
+            if (!(Data.getAllMembers().contains(player.getUniqueId()))) {
+              if (!player.isOp()) {
+                if (!(Data.getWaitingPlayers().contains(player.getUniqueId()))) {
+                  
+                } else {
+                  sender.sendMessage(ChatColor.RED+"Jestes juz na liscie oczekujacych! Aby sprawdzic swoj status, wpisz /vh status");
+                  return true;
+                }
+              } else {
+                sender.sendMessage(ChatColor.RED+"MODE NIE MOZE BYC W VALHALLI REEEEEEEEEEEEEEEEE!");
+                return true;
+              }
+            } else {
+              sender.sendMessage(ChatColor.RED+"Jestes juz czlonkiem Valhalli!");
+              return true;
+            }
+          } else {
+            sender.sendMessage(ChatColor.RED+"Ta komende moze wywolac tylko gracz!");
+            return true;
+          }
         } else if (args[0].equalsIgnoreCase("forceadd")) {
           if (!(sender instanceof Player)) {
             if (args.length > 1) {
