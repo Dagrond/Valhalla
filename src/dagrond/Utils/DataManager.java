@@ -58,7 +58,13 @@ public class DataManager {
   
   public HashMap<UUID, String> getPlayerResults (Player player) {
     HashMap<UUID, String> votes = new HashMap<>();
-    //TODO
+    for (UUID uuid: members) {
+      if (dataAccessor.getConfig().isConfigurationSection("votes."+uuid.toString()+"."+player.getUniqueId().toString())) {
+        votes.put(uuid, dataAccessor.getConfig().getString("votes."+uuid.toString()+"."+player.getUniqueId().toString()));
+      } else {
+        votes.put(uuid, "brak");
+      }
+    }
     return votes;
   }
   
@@ -110,38 +116,50 @@ public class DataManager {
   }
   
   public void addMember(Player player) {
-    player.getEnderChest().clear();
-    player.getInventory().clear();
-    player.setTotalExperience(0);
-    player.setExp(0);
-    player.setLevel(0);
-    player.getInventory().setChestplate(null);;
-    player.getInventory().setBoots(null);
-    player.getInventory().setLeggings(null);
-    player.getInventory().setHelmet(null);
-    player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aWitaj w Valhalli!"));
-    Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aGracz &e&l"+player.getDisplayName()+"&a zostal dodany do Valhalli!"));
-    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "pex user "+player.getName()+" group set rigcz");
-    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "spawn "+player.getName());
-    members.add(player.getUniqueId());
+    if (player.isOnline()) {
+      player.getEnderChest().clear();
+      player.getInventory().clear();
+      player.setTotalExperience(0);
+      player.setExp(0);
+      player.setLevel(0);
+      player.getInventory().setChestplate(null);;
+      player.getInventory().setBoots(null);
+      player.getInventory().setLeggings(null);
+      player.getInventory().setHelmet(null);
+      player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aWitaj w Valhalli!"));
+      Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aGracz &e&l"+player.getDisplayName()+"&a zostal dodany do Valhalli!"));
+      Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "pex user "+player.getName()+" group set rigcz");
+      Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "spawn "+player.getName());
+      members.add(player.getUniqueId());
+    } else {
+      waitingPlayers.add(player.getUniqueId());
+    }
     saveData();
   }
   
   public void removeMember(Player player) {
-    player.getEnderChest().clear();
-    player.getInventory().clear();
-    player.setTotalExperience(0);
-    player.setExp(0);
-    player.setLevel(0);
-    player.getInventory().setChestplate(null);;
-    player.getInventory().setBoots(null);
-    player.getInventory().setLeggings(null);
-    player.getInventory().setHelmet(null);
-    player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &cZostales wyrzucony z Valhalli!"));
-    Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &cGracz &e&l"+player.getDisplayName()+"&c zostal wyrzucony z Valhalli!"));
-    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "pex user "+player.getName()+" group set gracz");
-    Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "spawn "+player.getName());
-    members.add(player.getUniqueId());
+    if (player.isOnline()) {
+      player.getEnderChest().clear();
+      player.getInventory().clear();
+      player.setTotalExperience(0);
+      player.setExp(0);
+      player.setLevel(0);
+      player.getInventory().setChestplate(null);;
+      player.getInventory().setBoots(null);
+      player.getInventory().setLeggings(null);
+      player.getInventory().setHelmet(null);
+      player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &cZostales wyrzucony z Valhalli!"));
+      Bukkit.broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &cGracz &e&l"+player.getDisplayName()+"&c zostal wyrzucony z Valhalli!"));
+      Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "pex user "+player.getName()+" group set gracz");
+      Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "spawn "+player.getName());
+      members.remove(player.getUniqueId());
+    } else {
+      members.remove(player.getUniqueId());
+      membersToRemove.add(player.getUniqueId());
+      if (dataAccessor.getConfig().isConfigurationSection("votes."+player.getUniqueId())) {
+        dataAccessor.getConfig().getConfigurationSection("votes."+player.getUniqueId()).getKeys(true).clear();
+      }
+    }
     saveData();
   }
 }
