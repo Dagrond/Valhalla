@@ -31,10 +31,16 @@ public class ValhallaCommand implements CommandExecutor {
         if (args[0].equalsIgnoreCase("dolacz") || args[0].equalsIgnoreCase("join") || args[0].equalsIgnoreCase("apply")) {
           if (sender instanceof Player) {
             Player player = (Player) sender;
-            if (!(Data.getAllMembers().contains(player.getUniqueId()))) {
+            if (!Data.isMember(player)) {
               if (!player.isOp()) {
-                if (!(Data.getWaitingPlayers().contains(player.getUniqueId()))) {
-                  
+                if (!Data.isWaiting(player)) {
+                  Data.addWaitingPlayer(player);
+                  sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aPomyslnie dolaczono do listy oczekujacych graczy!"));
+                  sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aAby sprawdzic swoj status wpisz &e/vh status"));
+                  Data.broadcastToMembers(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aGracz &e"+player.getDisplayName()+"&a chce dolaczyc do Valhalli!"));
+                  Data.broadcastToMembers(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aWpisz &e/vh status "+player.getDisplayName()+"&a aby zobaczyc jego status"));
+                  Data.broadcastToMembers(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aWpisz &e/vh tak "+player.getDisplayName()+"&a lub &e/vh nie "+player.getDisplayName()+"&a aby zaglosowac!"));
+                  return true;
                 } else {
                   sender.sendMessage(ChatColor.RED+"Jestes juz na liscie oczekujacych! Aby sprawdzic swoj status, wpisz /vh status");
                   return true;
@@ -92,7 +98,9 @@ public class ValhallaCommand implements CommandExecutor {
             return true;
           }
         } else if (args[0].equalsIgnoreCase("tak") || args[0].equalsIgnoreCase("allow") || args[0].equalsIgnoreCase("yes")) {
+          //todo
         } else if (args[0].equalsIgnoreCase("nie") || args[0].equalsIgnoreCase("deny") || args[0].equalsIgnoreCase("no")) {
+          //todo
         } else if (args[0].equalsIgnoreCase("help") || args[0].equalsIgnoreCase("pomoc")) {
           if (sender.hasPermission("valhalla.member")) {
             sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aPomoc:"));
@@ -100,13 +108,13 @@ public class ValhallaCommand implements CommandExecutor {
             sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&5- /vh nie (gracz) - &6glosujesz PRZECIW przyjeciu gracza do Valhalli"));
             sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&5- /vh status (gracz) - &6informacje na temat gracza"));
             sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&5- /vh oczekujacy - &6Lista oczekujacych na zbawienie"));
-            sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&5- /vh lista - &6lista wszystkich czlonkow Valhalli"));
+            sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&5- /vh lista - &6lista czlonkow Valhalli"));
             return true;
           } else {
             sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aPomoc:"));
             sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&5- /vh dolacz - &6Wysyla prosbe o dolaczenie do Valhalli"));
             sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&5- /vh status - &6lWyswietla Twoj status"));
-            sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&5- /vh lista - &6lista wszystkich czlonkow Valhalli"));
+            sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&5- /vh lista - &6lista czlonkow Valhalli"));
             return true;
           }
         } else if (args[0].equalsIgnoreCase("lista") || args[0].equalsIgnoreCase("list")) {

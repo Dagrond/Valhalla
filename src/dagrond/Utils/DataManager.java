@@ -9,8 +9,17 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import dagrond.Main;
+import fr.xephi.authme.api.v3.AuthMeApi;
 
 public class DataManager {
+  /*                Zapisywanie glosowan w data.yml:
+   * votes:
+   *  (uuid czlonka valhalli):
+   *    (uuid gracza ktory sie stara dostac do valhalli): (dane: tak/nie)
+   *    (kolejne uuid): (kolejne dane)
+   *  (nastepny czlonek valhalli):
+   *    (jakies uuid pretendenta): (tak/nie)
+   */
   protected Main plugin;
   protected ConfigAccessor dataAccessor;
   protected HashSet<UUID> onlineMembers = new HashSet<>(); //gracze, ktorzy sa czlonkami valhalli i sa online
@@ -34,6 +43,26 @@ public class DataManager {
     return members;
   }
   
+  public boolean isMember(Player player) {
+    if (members.contains(player.getUniqueId()))
+      return true;
+    else
+      return false;
+  }
+  
+  public void broadcastToMembers (String msg) {
+    for(UUID uuid: getOnlineMembers()) {
+      Bukkit.getPlayer(uuid).sendMessage(msg);
+    }
+  }
+  
+  public boolean isWaiting(Player player) {
+    if (waitingMembers.contains(player.getUniqueId()))
+      return true;
+    else
+      return false;
+  }
+  
   public HashSet<UUID> getBannedMembers() {
 	    return membersToRemove;
 	  }
@@ -44,6 +73,10 @@ public class DataManager {
   
   public HashSet<UUID> getWaitingMembers() {
     return waitingMembers;
+  }
+  
+  public void setPlayerVote(Player player, UUID candidate, String vote) {
+    dataAccessor.getConfig().set("votes."+player.getUniqueId().toString()+"."+candidate.toString(), vote);
   }
   
   public HashMap<UUID, String> getSpecificPlayerVotes (Player player) {
@@ -68,6 +101,19 @@ public class DataManager {
     return votes;
   }
   
+  public void checkPlayer(Player player) {
+    if (player.isOnline()) {
+      if (AuthMeApi.getInstance().isAuthenticated(player)) {
+        if (members.contains(player.getUniqueId())) {
+          if (!onlineMembers.contains(player.getUniqueId()))
+            onlineMembers.add(player.getUniqueId());
+          if (membersToRemove.contains(player.getUniqueId()))
+            removeMember(player);
+        }
+      }
+    }
+  }
+  
   public void loadData() {
     if (dataAccessor.getConfig().isList("Members")) {
       for (Object uuid : dataAccessor.getConfig().getList("Members")) {
@@ -89,11 +135,6 @@ public class DataManager {
         waitingPlayers.add(UUID.fromString(uuid.toString()));
       }
     }
-    /*if (dataAccessor.getConfig().isConfigurationSection("WaitingPlayers")) {
-      for (Object uuid : dataAccessor.getConfig().getConfigurationSection("WaitingPlayers").getKeys(false)) {
-        waitingPlayers.put(UUID.fromString(uuid.toString()), dataAccessor.getConfig().getString("WaitingPlayers."+uuid.toString()));
-      }
-    }*/
   }
   
   public void saveData() {
@@ -131,6 +172,8 @@ public class DataManager {
       Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "pex user "+player.getName()+" group set rigcz");
       Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "spawn "+player.getName());
       members.add(player.getUniqueId());
+      if (waitingPlayers.contains(player.getUniqueId()))
+        waitingPlayers.remove(player.getUniqueId());
     } else {
       waitingPlayers.add(player.getUniqueId());
     }
@@ -153,6 +196,8 @@ public class DataManager {
       Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "pex user "+player.getName()+" group set gracz");
       Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "spawn "+player.getName());
       members.remove(player.getUniqueId());
+      if (membersToRemove.contains(player.getUniqueId()))
+        membersToRemove.remove(player.getUniqueId());
     } else {
       members.remove(player.getUniqueId());
       membersToRemove.add(player.getUniqueId());
