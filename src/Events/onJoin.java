@@ -1,15 +1,17 @@
 package Events;
 
-import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
 import dagrond.Main;
 import dagrond.Utils.DataManager;
+import fr.xephi.authme.api.v3.AuthMeApi;
 
 public class onJoin implements Listener {
   
+  @SuppressWarnings("unused")
   private Main plugin;
   private DataManager Data;
   
@@ -20,12 +22,18 @@ public class onJoin implements Listener {
   
   @EventHandler
   public void onLogin(final PlayerJoinEvent e) {
-    Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
-      @Override
-      public void run() {
-        Data.checkPlayer(e.getPlayer());
+    Player player = e.getPlayer();
+    while(player.isOnline()) {
+      if (AuthMeApi.getInstance().isAuthenticated(player)) {
+        if (Data.isWaiting(player)) {
+          Data.addMember(player);
+        } else if (Data.isWaitingForRemove(player)) {
+          Data.removeMember(player);
+        } else {
+         return; 
+        }
       }
-    }, 600);
+    }
   }
 
 }

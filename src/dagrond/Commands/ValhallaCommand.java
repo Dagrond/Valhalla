@@ -34,7 +34,11 @@ public class ValhallaCommand implements CommandExecutor {
             if (!Data.isMember(player)) {
               if (!player.isOp()) {
                 if (!Data.isWaiting(player)) {
-                  Data.addWaitingPlayer(player);
+                  String cause = "";
+                  for (int i = 2; i>=args.length-1; i++) {
+                    cause += args[i];
+                  }
+                  Data.addWaitingPlayer(player, cause);
                   sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aPomyslnie dolaczono do listy oczekujacych graczy!"));
                   sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aAby sprawdzic swoj status wpisz &e/vh status"));
                   Data.broadcastToMembers(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aGracz &e"+player.getDisplayName()+"&a chce dolaczyc do Valhalli!"));
@@ -58,15 +62,26 @@ public class ValhallaCommand implements CommandExecutor {
             return true;
           }
         } else if (args[0].equalsIgnoreCase("forceadd")) {
-          if (!(sender instanceof Player)) {
+          if (sender.isOp()) {
             if (args.length > 1) {
               Player player = Bukkit.getPlayer(args[1]);
-              if (player != null) {
-                Data.addMember(player);
-                sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aPomyslnie dodano gracza &e&l"+args[1]+" &ado Valhalli!"));
-                return true;
+              if (!Data.isWaiting(player)) {
+                if (!Data.isMember(player)) {
+                  if (player != null) {
+                    Data.addMember(player);
+                    sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aPomyslnie usunieto gracza &e&l"+args[1]+" &az Valhalli!"));
+                    return true;
+                  } else {
+                    sender.sendMessage(ChatColor.RED+"Gracz "+ChatColor.DARK_RED+args[1]+ChatColor.RED+" nie jest online! Zostanie usuniety z Valhalli automatycznie po wejsciu na serwer.");
+                    Data.addToRemove(player);
+                    return true;
+                  }
+                } else {
+                  sender.sendMessage(ChatColor.RED+"Gracz "+ChatColor.DARK_RED+args[1]+" jest juz czlonkiem Valhalli!");
+                  return true;
+                }
               } else {
-                sender.sendMessage(ChatColor.RED+"Gracz "+ChatColor.DARK_RED+args[1]+ChatColor.RED+" nie jest online!");
+                sender.sendMessage(ChatColor.RED+"Gracz "+ChatColor.DARK_RED+args[1]+" oczekuje juz na dodanie! Aby usunac go z listy oczekujacych wpisz /vh pardon (gracz)");
                 return true;
               }
             } else {
@@ -74,19 +89,30 @@ public class ValhallaCommand implements CommandExecutor {
               return true;
             }
           } else {
-            sender.sendMessage(ChatColor.RED+"Ta komende mozna wywolac tylko z konsoli!");
+            sender.sendMessage(ChatColor.RED+"Nie posiadasz odpowiednich uprawnien aby uzyc tej komendy");
             return true;
           }
         } else if (args[0].equalsIgnoreCase("forceremove")) {
-          if (!(sender instanceof Player)) {
+          if (sender.isOp()) {
             if (args.length > 1) {
               Player player = Bukkit.getPlayer(args[1]);
-              if (player != null) {
-                Data.removeMember(player);
-                sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aPomyslnie usunieto gracza &e&l"+args[1]+" &az Valhalli!"));
-                return true;
+              if (!Data.isWaitingForRemove(player)) {
+                if (Data.isMember(player)) {
+                  if (player != null) {
+                    Data.removeMember(player);
+                    sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aPomyslnie usunieto gracza &e&l"+args[1]+" &az Valhalli!"));
+                    return true;
+                  } else {
+                    sender.sendMessage(ChatColor.RED+"Gracz "+ChatColor.DARK_RED+args[1]+ChatColor.RED+" nie jest online! Zostanie usuniety z Valhalli automatycznie po wejsciu na serwer.");
+                    Data.addToRemove(player);
+                    return true;
+                  }
+                } else {
+                  sender.sendMessage(ChatColor.RED+"Gracz "+ChatColor.DARK_RED+args[1]+" nie jest czlonkiem Valhalli!");
+                  return true;
+                }
               } else {
-                sender.sendMessage(ChatColor.RED+"Gracz "+ChatColor.DARK_RED+args[1]+ChatColor.RED+" nie jest online!");
+                sender.sendMessage(ChatColor.RED+"Gracz "+ChatColor.DARK_RED+args[1]+" oczekuje juz na usuniecie! Aby usunac go z listy oczekujacych wpisz /vh pardon (gracz)");
                 return true;
               }
             } else {
@@ -94,7 +120,27 @@ public class ValhallaCommand implements CommandExecutor {
               return true;
             }
           } else {
-            sender.sendMessage(ChatColor.RED+"Ta komende mozna wywolac tylko z konsoli!");
+            sender.sendMessage(ChatColor.RED+"Nie posiadasz odpowiednich uprawnien aby uzyc tej komendy");
+            return true;
+          }
+        } else if (args[0].equalsIgnoreCase("pardon")) {
+          if (sender.isOp()) {
+            if (args.length>1) {
+              Player player = Bukkit.getPlayer(args[1]);
+              if (Data.isWaitingForRemove(player)) {
+                Data.removeFromMembersToRemove(player);
+                sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aPomyslnie usunieto gracza &e&l"+args[1]+" &az listy oczekujacych do usuniecia!"));
+                return true;
+              } else {
+                sender.sendMessage(ChatColor.RED+"Gracz "+ChatColor.DARK_RED+args[1]+" nie jest na liscie oczekujacych do usuniecia!");
+                return true;
+              }
+            } else {
+              sender.sendMessage(ChatColor.RED+"Uzycie: /vh pardon (gracz)");
+              return true;
+            }
+          } else {
+            sender.sendMessage(ChatColor.RED+"Nie posiadasz odpowiednich uprawnien aby uzyc tej komendy");
             return true;
           }
         } else if (args[0].equalsIgnoreCase("tak") || args[0].equalsIgnoreCase("allow") || args[0].equalsIgnoreCase("yes")) {

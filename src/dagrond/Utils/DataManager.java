@@ -9,22 +9,21 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import dagrond.Main;
-import fr.xephi.authme.api.v3.AuthMeApi;
 
 public class DataManager {
   /*                Zapisywanie glosowan w data.yml:
    * votes:
-   *  (uuid czlonka valhalli):
-   *    (uuid gracza ktory sie stara dostac do valhalli): (dane: tak/nie)
-   *    (kolejne uuid): (kolejne dane)
-   *  (nastepny czlonek valhalli):
-   *    (jakies uuid pretendenta): (tak/nie)
+   *  (uuid gracza ktory sie stara dostac do valhalli):
+   *    (uuid czlonka valhalli): (dane: tak/nie)
+   *    (nastepny czlonek valhalli): (kolejne dane)
+   *  (nastepne uuid gracza ktory sie stara dostac do valhalli):
+   *    (uuid czlonka valhalli): (tak/nie)  
    */
   protected Main plugin;
   protected ConfigAccessor dataAccessor;
   protected HashSet<UUID> onlineMembers = new HashSet<>(); //gracze, ktorzy sa czlonkami valhalli i sa online
   protected HashSet<UUID> members = new HashSet<>(); //gracze, ktorzy sa w Valhalli
-  protected HashSet<UUID> waitingPlayers = new HashSet<>(); //gracze, ktorzy zaaplikowali ale nie dostali jeszcze odpowiedniej ilosci glosow
+  protected HashMap<UUID, String> waitingPlayers = new HashMap<>(); //gracze, ktorzy zaaplikowali ale nie dostali jeszcze odpowiedniej ilosci glosow (UUID gracza: jego opis)
   protected HashSet<UUID> waitingMembers = new HashSet<>(); //gracze, ktorzy juz dostali sie do valhalli ale serwer oczekuje z ich dodaniem do czasu, az beda online
   protected HashSet<UUID> membersToRemove = new HashSet<>(); //gracze, ktorzy zostana usunieci po wejsciu
   
@@ -35,8 +34,26 @@ public class DataManager {
     loadData();
   }
   
-  public void addWaitingPlayer(Player player) {
-    waitingPlayers.add(player.getUniqueId());
+  public String checkPlayerVotes(Player player) {
+    String votes = "";
+    int required = 0;
+    int yes = 0;
+    int no = 0;
+    for (UUID uuid : members) {
+      if (System.currentTimeMillis()-Bukkit.getOfflinePlayer(uuid).getLastPlayed() <= 172800000) { //if player played in last 2 days
+        //todo
+      }
+    }
+    if (dataAccessor.getConfig().isConfigurationSection("votes."+player.getUniqueId())) {
+      for (String x : dataAccessor.getConfig().getConfigurationSection("votes."+player.getUniqueId()).getKeys(false)) {
+        
+      }
+    }
+    return votes;
+  }
+  
+  public void addWaitingPlayer(Player player, String cause) {
+    waitingPlayers.put(player.getUniqueId(), cause);
   }
   
   public HashSet<UUID> getAllMembers() {
@@ -63,11 +80,26 @@ public class DataManager {
       return false;
   }
   
+  public boolean isWaitingForRemove(Player player) {
+    if (membersToRemove.contains(player.getUniqueId()))
+      return true;
+    else
+      return false;
+  }
+  
+  public void removeFromMembersToRemove(Player player) { //WTF is that name
+    membersToRemove.remove(player.getUniqueId());
+  }
+  
+  public void addToRemove(Player player) {
+    membersToRemove.add(player.getUniqueId());
+  }
+  
   public HashSet<UUID> getBannedMembers() {
 	    return membersToRemove;
 	  }
   
-  public HashSet<UUID> getWaitingPlayers() {
+  public HashMap<UUID, String> getWaitingPlayers() {
     return waitingPlayers;
   }
   
@@ -101,19 +133,6 @@ public class DataManager {
     return votes;
   }
   
-  public void checkPlayer(Player player) {
-    if (player.isOnline()) {
-      if (AuthMeApi.getInstance().isAuthenticated(player)) {
-        if (members.contains(player.getUniqueId())) {
-          if (!onlineMembers.contains(player.getUniqueId()))
-            onlineMembers.add(player.getUniqueId());
-          if (membersToRemove.contains(player.getUniqueId()))
-            removeMember(player);
-        }
-      }
-    }
-  }
-  
   public void loadData() {
     if (dataAccessor.getConfig().isList("Members")) {
       for (Object uuid : dataAccessor.getConfig().getList("Members")) {
@@ -126,13 +145,13 @@ public class DataManager {
       }
     }
     if (dataAccessor.getConfig().isList("MembersToRemove")) {
-        for (Object uuid : dataAccessor.getConfig().getList("MembersToRemove")) {
-        	membersToRemove.add(UUID.fromString(uuid.toString()));
-        }
+      for (Object uuid : dataAccessor.getConfig().getList("MembersToRemove")) {
+        membersToRemove.add(UUID.fromString(uuid.toString()));
       }
-    if (dataAccessor.getConfig().isList("WaitingPlayers")) {
-      for (Object uuid : dataAccessor.getConfig().getList("WaitingPlayers")) {
-        waitingPlayers.add(UUID.fromString(uuid.toString()));
+    }
+    if (dataAccessor.getConfig().isConfigurationSection("WaitingPlayers")) {
+      for (String uuid : dataAccessor.getConfig().getConfigurationSection("WaitingPlayers").getKeys(false)) {
+          waitingPlayers.put(UUID.fromString(uuid), dataAccessor.getConfig().getString(uuid));
       }
     }
   }
@@ -140,10 +159,10 @@ public class DataManager {
   public void saveData() {
     dataAccessor.getConfig().set("Members", members);
     dataAccessor.getConfig().set("WaitingMembers", waitingMembers);
-    dataAccessor.getConfig().set("WaitingPlayers", waitingPlayers);
-    /*for (UUID uuid : waitingPlayers.keySet()) {
-      dataAccessor.getConfig().set("WaitingPlayers."+uuid.toString(), waitingPlayers.get(uuid));
-    }*/
+    dataAccessor.getConfig().set("membersToRemove", membersToRemove);
+    for (UUID uuid : waitingPlayers.keySet()) {
+      dataAccessor.getConfig().set(uuid.toString(), waitingPlayers.get(uuid));
+    }
     dataAccessor.saveConfig();
   }
   
@@ -172,10 +191,15 @@ public class DataManager {
       Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "pex user "+player.getName()+" group set rigcz");
       Bukkit.getServer().dispatchCommand(Bukkit.getServer().getConsoleSender(), "spawn "+player.getName());
       members.add(player.getUniqueId());
-      if (waitingPlayers.contains(player.getUniqueId()))
+      if (waitingPlayers.containsKey(player.getUniqueId()))
         waitingPlayers.remove(player.getUniqueId());
+      if (waitingMembers.contains(player.getUniqueId()))
+        waitingMembers.remove(player.getUniqueId());
+      if (dataAccessor.getConfig().isConfigurationSection("votes."+player.getUniqueId())) {
+        dataAccessor.getConfig().getConfigurationSection("votes."+player.getUniqueId()).getKeys(true).clear();
+      }
     } else {
-      waitingPlayers.add(player.getUniqueId());
+      waitingMembers.add(player.getUniqueId());
     }
     saveData();
   }
