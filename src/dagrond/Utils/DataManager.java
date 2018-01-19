@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import dagrond.Main;
@@ -41,14 +42,17 @@ public class DataManager {
     int no = 0;
     for (UUID uuid : members) {
       if (System.currentTimeMillis()-Bukkit.getOfflinePlayer(uuid).getLastPlayed() <= 172800000) { //if player played in last 2 days
-        //todo
+        if (dataAccessor.getConfig().getString("votes."+player.getUniqueId().toString()+"."+uuid).equals("tak")) {
+          yes++;
+        } else if (dataAccessor.getConfig().getString("votes."+player.getUniqueId().toString()+"."+uuid).equals("nie")) {
+          no++;
+        } else {
+          no++;
+        }
+        required++;
       }
     }
-    if (dataAccessor.getConfig().isConfigurationSection("votes."+player.getUniqueId())) {
-      for (String x : dataAccessor.getConfig().getConfigurationSection("votes."+player.getUniqueId()).getKeys(false)) {
-        
-      }
-    }
+    votes = required+", "+yes+", "+no;
     return votes;
   }
   
@@ -89,6 +93,26 @@ public class DataManager {
   
   public void removeFromMembersToRemove(Player player) { //WTF is that name
     membersToRemove.remove(player.getUniqueId());
+  }
+  
+  public void removeWaitingMember(Player player) { //WTF is that name too
+    waitingMembers.remove(player.getUniqueId());
+  }
+  
+  public boolean getMemberVote (Player voter, OfflinePlayer player) {
+    if (dataAccessor.getConfig().isConfigurationSection("votes."+player.getUniqueId().toString()+"."+voter.getUniqueId().toString())) {
+      if (dataAccessor.getConfig().getString("votes."+player.getUniqueId().toString()+"."+voter.getUniqueId().toString()).equalsIgnoreCase("tak")) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+  
+  public void addMemberVote (Player voter, OfflinePlayer player, String vote) {
+    dataAccessor.getConfig().set("votes."+player.getUniqueId().toString()+"."+voter.getUniqueId().toString(), vote);
   }
   
   public void addToRemove(Player player) {

@@ -129,10 +129,14 @@ public class ValhallaCommand implements CommandExecutor {
               Player player = Bukkit.getPlayer(args[1]);
               if (Data.isWaitingForRemove(player)) {
                 Data.removeFromMembersToRemove(player);
-                sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aPomyslnie usunieto gracza &e&l"+args[1]+" &az listy oczekujacych do usuniecia!"));
+                sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aPomyslnie usunieto gracza &e&l"+args[1]+" &az listy oczekujacych do usuniecia z Valhalli!"));
                 return true;
-              } else {
-                sender.sendMessage(ChatColor.RED+"Gracz "+ChatColor.DARK_RED+args[1]+" nie jest na liscie oczekujacych do usuniecia!");
+              } else if (Data.isWaiting(player)) {
+                Data.removeWaitingMember(player);
+                sender.sendMessage(ChatColor.translateAlternateColorCodes('&', "&3&l[&6&lValhalla&3&l] &aPomyslnie usunieto gracza &e&l"+args[1]+" &az listy oczekujacych do dodania do Valhalli!"));
+                return true;
+              }  else {
+                sender.sendMessage(ChatColor.RED+"Gracz "+ChatColor.DARK_RED+args[1]+" nie jest na liscie oczekujacych!");
                 return true;
               }
             } else {
