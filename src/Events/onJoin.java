@@ -25,9 +25,9 @@ public class onJoin implements Listener {
     Player player = e.getPlayer();
     while(player.isOnline()) {
       if (AuthMeApi.getInstance().isAuthenticated(player)) {
-        if (Data.isWaiting(player)) {
+        if (Data.isWaiting(player.getUniqueId())) {
           Data.addMember(player);
-        } else if (Data.isWaitingForRemove(player)) {
+        } else if (Data.isWaitingForRemove(player.getUniqueId())) {
           Data.removeMember(player);
         } else {
          return; 

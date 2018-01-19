@@ -6,7 +6,6 @@ import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import dagrond.Main;
@@ -35,16 +34,16 @@ public class DataManager {
     loadData();
   }
   
-  public String checkPlayerVotes(Player player) {
+  public String checkPlayerVotes(UUID player) {
     String votes = "";
     int required = 0;
     int yes = 0;
     int no = 0;
     for (UUID uuid : members) {
       if (System.currentTimeMillis()-Bukkit.getOfflinePlayer(uuid).getLastPlayed() <= 172800000) { //if player played in last 2 days
-        if (dataAccessor.getConfig().getString("votes."+player.getUniqueId().toString()+"."+uuid).equals("tak")) {
+        if (dataAccessor.getConfig().getString("votes."+player.toString()+"."+uuid).equals("tak")) {
           yes++;
-        } else if (dataAccessor.getConfig().getString("votes."+player.getUniqueId().toString()+"."+uuid).equals("nie")) {
+        } else if (dataAccessor.getConfig().getString("votes."+player.toString()+"."+uuid).equals("nie")) {
           no++;
         } else {
           no++;
@@ -56,16 +55,24 @@ public class DataManager {
     return votes;
   }
   
-  public void addWaitingPlayer(Player player, String cause) {
-    waitingPlayers.put(player.getUniqueId(), cause);
+  public void addWaitingPlayer(UUID uuid, String cause) {
+    waitingPlayers.put(uuid, cause);
   }
   
   public HashSet<UUID> getAllMembers() {
     return members;
   }
   
-  public boolean isMember(Player player) {
-    if (members.contains(player.getUniqueId()))
+  public boolean isApplying(UUID uuid) {
+    if (waitingPlayers.containsKey(uuid)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  
+  public boolean isMember(UUID uuid) {
+    if (members.contains(uuid))
       return true;
     else
       return false;
@@ -77,31 +84,31 @@ public class DataManager {
     }
   }
   
-  public boolean isWaiting(Player player) {
-    if (waitingMembers.contains(player.getUniqueId()))
+  public boolean isWaiting(UUID uuid) {
+    if (waitingMembers.contains(uuid))
       return true;
     else
       return false;
   }
   
-  public boolean isWaitingForRemove(Player player) {
-    if (membersToRemove.contains(player.getUniqueId()))
+  public boolean isWaitingForRemove(UUID uuid) {
+    if (membersToRemove.contains(uuid))
       return true;
     else
       return false;
   }
   
-  public void removeFromMembersToRemove(Player player) { //WTF is that name
-    membersToRemove.remove(player.getUniqueId());
+  public void removeFromMembersToRemove(UUID uuid) { //WTF is that name
+    membersToRemove.remove(uuid);
   }
   
-  public void removeWaitingMember(Player player) { //WTF is that name too
-    waitingMembers.remove(player.getUniqueId());
+  public void removeWaitingMember(UUID uuid) { //WTF is that name too
+    waitingMembers.remove(uuid);
   }
   
-  public boolean getMemberVote (Player voter, OfflinePlayer player) {
-    if (dataAccessor.getConfig().isConfigurationSection("votes."+player.getUniqueId().toString()+"."+voter.getUniqueId().toString())) {
-      if (dataAccessor.getConfig().getString("votes."+player.getUniqueId().toString()+"."+voter.getUniqueId().toString()).equalsIgnoreCase("tak")) {
+  public boolean getMemberVote (UUID voter, UUID player) {
+    if (dataAccessor.getConfig().isConfigurationSection("votes."+player.toString()+"."+voter.toString())) {
+      if (dataAccessor.getConfig().getString("votes."+player.toString()+"."+voter.toString()).equalsIgnoreCase("tak")) {
         return true;
       } else {
         return false;
@@ -111,12 +118,12 @@ public class DataManager {
     }
   }
   
-  public void addMemberVote (Player voter, OfflinePlayer player, String vote) {
-    dataAccessor.getConfig().set("votes."+player.getUniqueId().toString()+"."+voter.getUniqueId().toString(), vote);
+  public void addMemberVote (UUID voter, UUID player, String vote) {
+    dataAccessor.getConfig().set("votes."+player.toString()+"."+voter.toString(), vote);
   }
   
-  public void addToRemove(Player player) {
-    membersToRemove.add(player.getUniqueId());
+  public void addToRemove(UUID uuid) {
+    membersToRemove.add(uuid);
   }
   
   public HashSet<UUID> getBannedMembers() {
